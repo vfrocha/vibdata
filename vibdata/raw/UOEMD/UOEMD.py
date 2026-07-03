@@ -31,7 +31,9 @@ FAULT_MAP = {
 
 class UOEMD_raw:    
     def __init__(self, root_dir, download=False):
-        super().__init__(root_dir=root_dir)
+        super().__init__(root_dir)
+        
+        # Aponta para a pasta onde você extraiu os arquivos
         self.dataset_dir = os.path.join(root_dir, "UOEMD_raw")
         
         # Encontra todos os arquivos .mat de forma recursiva
