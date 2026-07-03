@@ -3,13 +3,11 @@ import glob
 import numpy as np
 import pandas as pd
 import scipy.io as sio
+from vibdata.raw.base import RawVibrationDataset
 
 class UOEMD_raw:
-    """
-    Carregador Nativo para o University of Ottawa Electric Motor Dataset (UOEMD).
-    """
     def __init__(self, root_dir, download=False):
-        # Aponta para a pasta onde você salvará os arquivos originais
+        super().__init__(root_dir=root_dir)
         self.dataset_dir = os.path.join(root_dir, "UOEMD_raw")
         
         # Encontra todos os arquivos .mat de forma recursiva
