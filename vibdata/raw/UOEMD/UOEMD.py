@@ -17,6 +17,18 @@ LOAD_MAP = {
     '1': 'Loaded'
 }
 
+# Mapeamento das siglas do Mendeley para as Strings exatas do labels.csv
+FAULT_MAP = {
+    'H-H': 'Normal',
+    'R-U': 'Unbalance',          # Assumindo Rotor(R) - Unbalance(U)
+    'R-M': 'Misalignment',       # Assumindo Rotor(R) - Misalignment(M)
+    'S-W': 'Stator Winding',     # Assumindo Stator(S) - Winding(W)
+    'V-V': 'Voltage Imbalance',  # Ajuste conforme a sigla real
+    'K-A': 'Broken Rotor Bar',   # Broken(K) - Rotor Bars(A)
+    'F-B': 'Faulty Bearing',     # Faulty(F) - Bearing(B)
+    'B-R': 'Bowed Rotor'         # Bowed(B) - Rotor(R)
+}
+
 class UOEMD_raw:    
     def __init__(self, root_dir, download=False):
         super().__init__(root_dir=root_dir)
@@ -52,12 +64,13 @@ class UOEMD_raw:
         
         if len(parts) >= 4:
             class_code = f"{parts[0]}-{parts[1]}" # Ex: 'H-H' ou 'S-W'
-            speed_code = parts[2]
-            load_code = parts[3]
             
-            fault_class = class_code
-            speed_val = SPEED_MAP.get(speed_code, 'Unknown')
-            load_val = LOAD_MAP.get(load_code, 'Unknown')
+            # Aqui acontece a mágica: converte 'S-W' para 'Stator Winding'
+            # garantindo que case perfeitamente com o labels.csv
+            fault_class = FAULT_MAP.get(class_code, 'Unknown') 
+            
+            speed_val = SPEED_MAP.get(parts[2], 'Unknown')
+            load_val = LOAD_MAP.get(parts[3], 'Unknown')
         else:
             fault_class, speed_val, load_val = "Unknown", "Unknown", "Unknown"
         
