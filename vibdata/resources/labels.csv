@@ -34,3 +34,11 @@ id,label,dataset
 49,Outer Race,UORED
 50,Ball,UORED
 51,Cage,UORED
+52,Normal,UOEMD
+53,Unbalance,UOEMD
+54,Misalignment,UOEMD
+55,Stator Winding,UOEMD
+56,Voltage Imbalance,UOEMD
+57,Broken Rotor Bar,UOEMD
+58,Faulty Bearing,UOEMD
+59,Bowed Rotor,UOEMD
