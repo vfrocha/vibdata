@@ -5,7 +5,19 @@ import pandas as pd
 import scipy.io as sio
 from vibdata.raw.base import RawVibrationDataset
 
-class UOEMD_raw:
+# Mapeamentos baseados na descrição do Mendeley
+SPEED_MAP = {
+    '1': '15Hz', '2': '30Hz', '3': '45Hz', '4': '60Hz',
+    '5': 'Inc_15_to_45Hz', '6': 'Inc_30_to_60Hz',
+    '7': 'Dec_45_to_15Hz', '8': 'Dec_60_to_30Hz'
+}
+
+LOAD_MAP = {
+    '0': 'No_Load', 
+    '1': 'Loaded'
+}
+
+class UOEMD_raw:    
     def __init__(self, root_dir, download=False):
         super().__init__(root_dir=root_dir)
         self.dataset_dir = os.path.join(root_dir, "UOEMD_raw")
@@ -21,32 +33,42 @@ class UOEMD_raw:
 
     def __getitem__(self, idx):
         file_path = self.files[idx]
+        file_name = os.path.basename(file_path).split('.')[0] # Exemplo: 'H-H-1-0'
         
-        # 1. Carrega o sinal bruto do Matlab
+        # 1. Extração do Sinal
         mat_data = sio.loadmat(file_path)
-        signal = None
+        raw_signal = None
+        
+        # Procura a variável principal dentro do .mat ignorando metadados do matlab
         for key in mat_data.keys():
             if not key.startswith('__'):
-                signal = mat_data[key]
+                # Extrai todas as linhas e apenas a Coluna 0 (Acelerômetro 1)
+                raw_signal = mat_data[key][:, 0] 
                 break
                 
-        # 2. Lógica de extração de Metadados (Ajustaremos quando virmos os nomes reais dos arquivos)
-        folder_name = os.path.basename(os.path.dirname(file_path))
-        file_name = os.path.basename(file_path).lower()
+        # 2. Extração Precisa de Metadados via Nome do Arquivo
+        # Quebra o 'H-H-1-0' em ['H', 'H', '1', '0']
+        parts = file_name.split('-')
         
-        speed = "unknown" 
-        load = "unknown"  
-        label = "Class_X" 
+        if len(parts) >= 4:
+            class_code = f"{parts[0]}-{parts[1]}" # Ex: 'H-H' ou 'S-W'
+            speed_code = parts[2]
+            load_code = parts[3]
+            
+            fault_class = class_code
+            speed_val = SPEED_MAP.get(speed_code, 'Unknown')
+            load_val = LOAD_MAP.get(load_code, 'Unknown')
+        else:
+            fault_class, speed_val, load_val = "Unknown", "Unknown", "Unknown"
         
-        if 'normal' in file_name or 'healthy' in file_name or '0' in file_name:
-            label = "Class_Normal"
-
-        meta = {
+        # O dicionário padronizado da vibdata
+        metainfo = {
             'dataset': 'UOEMD',
-            'sample_rate': 50000, # Valor temporário (vamos auditar em breve)
-            'speed': speed,
-            'load': load,
-            'label': label
+            'file_name': file_name + '.mat',
+            'label': fault_class,       # Usado para classificação de defeito
+            'speed': speed_val,         # Usado para Cross-Validation (Leave-One-Speed-Out)
+            'load': load_val,           # Usado para Cross-Validation (Leave-One-Load-Out)
+            'sample_rate': 42000        # Dado oficial do Mendeley
         }
 
-        return {'signal': signal, 'metainfo': pd.DataFrame([meta])}
+        return {"signal": raw_signal, "metainfo": metainfo}
