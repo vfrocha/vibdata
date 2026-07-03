@@ -5,4 +5,4 @@ from .CWRU.CWRU import CWRU_raw
 from .MFPT.MFPT import MFPT_raw
 from .HUST.HUST import HUST_raw
 from .UORED.UORED import UORED_raw
-from .UOMED.UOMED import UOEMD_raw
+from .UOEMD.UOEMD import UOEMD_raw
