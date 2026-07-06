@@ -32,8 +32,9 @@ class UOEMD_raw(RawVibrationDataset):
     Carregador Nativo para o University of Ottawa Electric Motor Dataset (UOEMD).
     """
     def __init__(self, root_dir, download=False):
-        # Ignora o download=False que vem do make_dataset para não quebrar a herança
-        super().__init__(root_dir)
+        # Chama o super vazio para evitar o erro do object.__init__
+        super().__init__()
+        self.root_dir = root_dir
         self.dataset_dir = os.path.join(root_dir, "UOEMD_raw")
         
         # Busca recursiva para encontrar os .mat onde quer que estejam
