@@ -19,11 +19,13 @@ class UORED_raw(RawVibrationDataset, DownloadableDataset):
     source = "https://prod-dcd-datasets-cache-zipfiles.s3.eu-west-1.amazonaws.com/y2px5tg92h-4.zip"
 
     def __init__(self, root_dir: str, download : bool = False) -> None:
-        # Bypass completo: Removemos a chamada da classe mãe para evitar o erro do object.__init__
+        # Apenas definimos a raiz, sem tentar forçar a reescrita do raw_folder aqui
         self.root_dir = root_dir
-        
-        # Apontamos a pasta diretamente para a estrutura que extraímos manualmente
-        self.raw_folder = os.path.join(root_dir, "UORED_raw")
+
+    @property
+    def raw_folder(self) -> str:
+        # Sobrescrevemos a propriedade nativa de forma segura para apontar para a nossa pasta
+        return os.path.join(self.root_dir, "UORED_raw")
 
     def _check_exists(self) -> bool:
         # Forçamos a retornar True para que a biblioteca NUNCA tente acionar o download
