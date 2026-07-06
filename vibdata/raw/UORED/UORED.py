@@ -13,15 +13,15 @@ from vibdata.definitions import LABELS_PATH
 import scipy
 
 class UORED_raw(RawVibrationDataset, DownloadableDataset):
-
     mirrors = [""]
     resources = [("UORED.zip", "9c6e86e4dc2f741a4c3f016fd5ec93d0")]
     source = "https://prod-dcd-datasets-cache-zipfiles.s3.eu-west-1.amazonaws.com/y2px5tg92h-4.zip"
 
     def __init__(self, root_dir: str, download : bool = False) -> None:
-        # Bypass completo para não engatilhar a classe DownloadableDataset
-        self.root_dir = root_dir
-        # Apontamos diretamente para a pasta onde extraímos os dados manualmente
+        # Chama a classe mãe de forma segura para criar os atributos essenciais como self.raw_folder
+        RawVibrationDataset.__init__(self, root_dir=root_dir)
+        
+        # Apontamos a pasta para a estrutura que extraímos manualmente
         self.raw_folder = os.path.join(root_dir, "UORED_raw")
 
     def _check_exists(self) -> bool:
