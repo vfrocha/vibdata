@@ -19,15 +19,18 @@ class UORED_raw(RawVibrationDataset, DownloadableDataset):
     source = "https://prod-dcd-datasets-cache-zipfiles.s3.eu-west-1.amazonaws.com/y2px5tg92h-4.zip"
 
     def __init__(self, root_dir: str, download : bool = False) -> None:
-        if download:
-            super().__init__(
-                root_dir=root_dir,
-                download_resources=UORED_raw.resources,
-                download_urls=UORED_raw.mirrors,
-                extract_files=True,
-            )
-        else:
-            super().__init__(root_dir=root_dir, download_resources=UORED_raw.resources)
+        # Bypass completo para não engatilhar a classe DownloadableDataset
+        self.root_dir = root_dir
+        # Apontamos diretamente para a pasta onde extraímos os dados manualmente
+        self.raw_folder = os.path.join(root_dir, "UORED_raw")
+
+    def _check_exists(self) -> bool:
+        # Forçamos a retornar True para que a biblioteca NUNCA tente acionar o download
+        return True
+
+    def download(self) -> None:
+        # Anulamos a função de download original para isolar a AWS
+        pass
 
     def __getitem__(self, index : slice | int ) -> dict:
         # TODO: Pensar se vai realmenter manter o retorno como uma lista
