@@ -1,101 +1,95 @@
 import os
-from typing import List, Tuple
-from urllib.error import URLError
+import glob
+import scipy.io as sio
+from vibdata.raw.base import RawVibrationDataset
 
-from gdown import download
+FAULT_MAP = {
+    '1_healthy': 'Normal',
+    '2_inner_race_faults': 'Inner Race',
+    '3_outer_race_faults': 'Outer Race',
+    '4_ball_faults': 'Ball',
+    '5_cage_faults': 'Cage'
+}
 
-import numpy as np
-import pandas as pd
-import requests
-from vibdata.raw.base import DownloadableDataset, RawVibrationDataset
-from vibdata.raw.utils import _get_package_resource_dataframe, extract_archive_and_remove
-from vibdata.definitions import LABELS_PATH
-import scipy
+# Mapeamento do estágio de falha baseado no último número do arquivo
+STAGE_MAP = {
+    '0': 'healthy',
+    '1': 'development',
+    '2': 'fault'
+}
 
-class UORED_raw(RawVibrationDataset, DownloadableDataset):
-
-    mirrors = [""]
-    resources = [("UORED.zip", "9c6e86e4dc2f741a4c3f016fd5ec93d0")]
-    source = "https://prod-dcd-datasets-cache-zipfiles.s3.eu-west-1.amazonaws.com/y2px5tg92h-4.zip"
-
-    def __init__(self, root_dir: str, download : bool = False) -> None:
-        # Apenas definimos a raiz, sem tentar forçar a reescrita do raw_folder aqui
+class UORED_raw(RawVibrationDataset):
+    """
+    Carregador Moderno e Flexível para o UORED.
+    Extrai metadados (Bearing ID e Stage) diretamente dos nomes dos arquivos
+    para garantir suporte à validação cruzada (Leave-One-Bearing-Out).
+    """
+    def __init__(self, root_dir: str, download: bool = False) -> None:
+        super().__init__()
         self.root_dir = root_dir
-
-    @property
-    def raw_folder(self) -> str:
-        # Sobrescrevemos a propriedade nativa de forma segura para apontar para a nossa pasta
-        return os.path.join(self.root_dir, "UORED_raw")
-
-    def _check_exists(self) -> bool:
-        # Forçamos a retornar True para que a biblioteca NUNCA tente acionar o download
-        return True
-
-    def download(self) -> None:
-        # Anulamos a função de download original para isolar a AWS
-        pass
-
-    def __getitem__(self, index : slice | int ) -> dict:
-        # TODO: Pensar se vai realmenter manter o retorno como uma lista
-        if isinstance(index, int):
-            ret = self.__getitem__([index])
-            return ret
-        metainfo = self.getMetaInfo()
-        if isinstance(index, slice):
-            rows = metainfo.iloc[index.start : index.stop : index.step]
-        else:
-            rows = metainfo.iloc[index]
+        self.dataset_dir = os.path.join(root_dir, "UORED_raw")
+        self.files = glob.glob(os.path.join(self.dataset_dir, "**/*.mat"), recursive=True)
         
-        signals = np.empty(rows.shape[0], dtype=object)
-        file_names = rows["file_name"]
-        for i, f_name in enumerate(file_names):
-            data = scipy.io.loadmat(
-                os.path.join(
-                    self.raw_folder, f_name
-                ),
-            )
-            # Remove variables native from matlab files
-            data = {key : value for key, value in data.items() if not key.startswith("__")}
-            tag_name = os.path.basename(f_name).replace(".mat", "")
-            signal = data[tag_name][:, 0] # The accelerometer data
-            # TODO: Add the other infos that the sample may have like, `temperature` and `acoustic`
-            signals[i] = signal
+        if len(self.files) == 0:
+            print(f"[AVISO] Nenhum ficheiro .mat encontrado em {self.dataset_dir}.")
+
+    def __len__(self):
+        return len(self.files)
+
+    def __getitem__(self, idx: int) -> dict:
+        file_path = self.files[idx]
+        file_name_full = os.path.basename(file_path)
+        file_name_no_ext = file_name_full.replace('.mat', '')
         
-        ret = {"signal" : signals, "metainfo": rows}
-        return ret
-
-    def getMetaInfo(self, labels_as_str=False) -> pd.DataFrame:
-        df = _get_package_resource_dataframe(__package__, "UORED.csv")
-        if labels_as_str:
-            # Create a dict with the relation between the centralized label with the actually label name
-            all_labels = pd.read_csv(LABELS_PATH)
-            dataset_labels: pd.DataFrame = all_labels.loc[all_labels["dataset"] == self.name()]
-            dict_labels = {id_label: labels_name for id_label, labels_name, _ in dataset_labels.itertuples(index=False)}
-            df["label"] = df["label"].apply(lambda id_label: dict_labels[id_label])
-        return df
-
-    def name(self):
-        return "UORED"
-    
-
-    def download(self) -> None:
-        """
-        Override the download method, applying the download directly from the source instead of the google drive
-        """
-        if self._check_exists():
-            return
-
-        os.makedirs(self.raw_folder, exist_ok=True)
+        # 1. Carrega o sinal bruto do Matlab
         try:
-            zip_path = os.path.join(self.raw_folder, self.name() + ".zip")
-            download(self.source, output=zip_path)
-            extract_archive_and_remove(zip_path, self.raw_folder)
-            # Rename directory to match the default pattern
-            os.rename(
-                os.path.join(self.raw_folder, "University of Ottawa Rolling-element Dataset – Vibration and Acoustic Faults under Constant Load and Speed conditions (UORED-VAFCLS)"), 
-                os.path.join(self.raw_folder, self.name())
-            )
-        except URLError as error:
-            print("Failed to download:\n{}".format(error))
-        finally:
-            print()
+            mat_data = sio.loadmat(file_path)
+        except Exception as e:
+            print(f"Erro ao carregar o ficheiro {file_path}: {e}")
+            return {"signal": None, "metainfo": None}
+            
+        raw_signal = None
+        for key in mat_data.keys():
+            if not key.startswith('__'):
+                try:
+                    raw_signal = mat_data[key][:, 0] 
+                except IndexError:
+                    raw_signal = mat_data[key].flatten()
+                break
+                
+        # 2. Extração da Classe Base (via nome da pasta)
+        path_lower = file_path.lower()
+        fault_class = "Unknown"
+        for key_pattern, label in FAULT_MAP.items():
+            if key_pattern in path_lower:
+                fault_class = label
+                break
+                
+        # 3. Extração Inteligente de Metadados (Bearing ID e Stage) via nome do arquivo
+        # Exemplo: 'C_18_1' -> parts = ['C', '18', '1']
+        parts = file_name_no_ext.split('_')
+        
+        bearing_id = "Unknown"
+        stage_val = "unknown"
+        
+        if len(parts) >= 3:
+            bearing_id = parts[1]
+            stage_code = parts[2]
+            stage_val = STAGE_MAP.get(stage_code, "unknown")
+        
+        meta = {
+            'dataset': 'UORED',
+            'file_name': file_name_full,
+            'label': fault_class,
+            
+            # --- Informações Vitais para o make_dataset.py ---
+            'bearing_id': bearing_id,
+            'stage': stage_val,
+            
+            # Informações fixas baseadas no UORED.csv
+            'load_N': 400,
+            'rotation_hz': 29.166667,
+            'sample_rate': 42000 
+        }
+
+        return {"signal": raw_signal, "metainfo": meta}
