@@ -37,14 +37,15 @@ class HUST_Gearbox_raw(RawVibrationDataset):
         
         # 1. Carrega o sinal bruto do .txt
         try:
-            # O truque 'names' força o Pandas a aceitar linhas irregulares sem quebrar (Error tokenizing data)
-            # 'sep='\s+'' é o método mais robusto para separar por qualquer quantidade de espaços/tabs
-            df = pd.read_csv(file_path, header=None, sep='\s+', names=[0, 1, 2, 3, 4])
+            # skiprows=18 ignora o cabeçalho de texto (Title, Parameters, etc.)
+            # sep='\s+' garante que ele separe perfeitamente pelas tabulações
+            df = pd.read_csv(file_path, skiprows=18, header=None, sep='\s+')
             
-            # Pegamos apenas a 1ª coluna (índice 0) que contém a vibração e ignoramos falhas (dropna)
-            raw_signal = df[0].dropna().values 
+            # df.values[:, 0] é o Tempo (ignorar)
+            # df.values[:, 1] é o Channel1 (Acelerômetro principal)
+            raw_signal = df.values[:, 1] 
             
-            # Segurança extra: Garante que pegamos os 262144 pontos descritos no artigo
+            # Segurança: Garante que pegamos apenas os 262144 pontos descritos no artigo
             if len(raw_signal) > 262144:
                 raw_signal = raw_signal[:262144]
                 
