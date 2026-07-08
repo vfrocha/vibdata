@@ -13,7 +13,7 @@ FAULT_MAP = {
 class HUST_Gearbox_raw(RawVibrationDataset):
     """
     Carregador Nativo para o HUST Gearbox Dataset.
-    Lê arquivos .txt separados por espaços/tabs dinamicamente.
+    Lê arquivos .txt ignorando o cabeçalho e selecionando o canal correto de vibração.
     """
     def __init__(self, root_dir, download=False):
         super().__init__()
@@ -37,15 +37,16 @@ class HUST_Gearbox_raw(RawVibrationDataset):
         
         # 1. Carrega o sinal bruto do .txt
         try:
-            # skiprows=18 ignora o cabeçalho de texto (Title, Parameters, etc.)
-            # sep='\s+' garante que ele separe perfeitamente pelas tabulações
+            # skiprows=18 pula o cabeçalho de texto e evita erros de tokenização do Pandas
             df = pd.read_csv(file_path, skiprows=18, header=None, sep='\s+')
             
-            # df.values[:, 0] é o Tempo (ignorar)
-            # df.values[:, 1] é o Channel1 (Acelerômetro principal)
-            raw_signal = df.values[:, 1] 
+            # Estrutura das colunas no arquivo HUST Gearbox:
+            # Índice 0: Tempo
+            # Índice 1: Channel 1 (Tachometer / Rotação)
+            # Índice 2: Channel 2 (Sinal de Vibração Principal) <-- ALVO CORRETO
+            raw_signal = df.values[:, 2] 
             
-            # Segurança: Garante que pegamos apenas os 262144 pontos descritos no artigo
+            # Segurança: Garante que pegamos apenas os 262.144 pontos descritos no artigo
             if len(raw_signal) > 262144:
                 raw_signal = raw_signal[:262144]
                 
@@ -54,14 +55,12 @@ class HUST_Gearbox_raw(RawVibrationDataset):
             return {"signal": None, "metainfo": None}
             
         # 2. Extração Inteligente da Condição e Rótulo
-        # O nome do arquivo é o Rótulo_Condição (ex: "B_20_1" -> Broken, Condição "20_1")
         parts = file_name_no_ext.split('_')
         
         fault_code = parts[0]
         fault_class = FAULT_MAP.get(fault_code, "Unknown")
         
         # A condição é todo o resto do nome do arquivo após o código da classe
-        # Isso garante que "20_1" (20Hz, carga 1) seja uma pasta diferente de "20_2"
         if len(parts) > 1:
             condition = "_".join(parts[1:]) 
         else:
