@@ -7,3 +7,4 @@ from .HUST.HUST import HUST_raw
 from .UORED.UORED import UORED_raw
 from .UOEMD.UOEMD import UOEMD_raw
 from .HUST_Gearbox.HUST_Gearbox import HUST_Gearbox_raw
+from .Mechanical_Gear.Mechanical_Gear import Mechanical_Gear_raw
