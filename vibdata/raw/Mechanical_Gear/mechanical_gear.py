@@ -24,7 +24,7 @@ class Mechanical_Gear_raw(RawVibrationDataset):
         
         # Mapeamento Dinâmico no momento da inicialização
         if len(self.files) > 0:
-            print(f"-> Mapeando {len(self.files)} arquivos gigantes do Mechanical Gear. Isso pode levar alguns segundos...")
+            print(f"-> Mapeando {len(self.files)} arquivos do Mechanical Gear. Isso pode levar alguns segundos...")
             for file_path in self.files:
                 file_name_full = os.path.basename(file_path)
                 file_name_no_ext = file_name_full.replace('.csv', '')
@@ -35,7 +35,7 @@ class Mechanical_Gear_raw(RawVibrationDataset):
                     fault_class = 'Healthy'
                     
                 try:
-                    # Lê o CSV gigante (low_memory=False previne o DtypeWarning)
+                    # Lê o CSV (low_memory=False previne o DtypeWarning da versão anterior)
                     df = pd.read_csv(file_path, header=None, low_memory=False)
                     
                     # ---------------------------------------------------------
@@ -57,6 +57,13 @@ class Mechanical_Gear_raw(RawVibrationDataset):
                         # Extraímos apenas a Coluna 2 (Sensor 1 - Eixo X)
                         signal_chunk = group[2].values
                         
+                        # DEBUG: Ajuda a verificar o tamanho real do dataset
+                        print(f"      -> Chunk {fault_class} ({speed}Hz, {load}Nm): {len(signal_chunk)} pontos")
+                        
+                        # Ignora "falsos chunks" minúsculos (ex: sujeira do sensor)
+                        if len(signal_chunk) < 500:
+                            continue
+                            
                         # Guardamos este pedaço específico como uma amostra independente
                         self.samples.append({
                             'signal': signal_chunk,
