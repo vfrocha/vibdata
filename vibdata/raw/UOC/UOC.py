@@ -42,10 +42,16 @@ class UOC_raw(RawVibrationDataset, DownloadableDataset):
             df["label"] = df["label"].apply(lambda id_label: dict_labels[id_label])
         return df
 
-    def __getitem__(self, i) -> pd.DataFrame:
-        if not hasattr(i, "__len__") and not isinstance(i, slice):
-            return self.__getitem__([i])
+    def __getitem__(self, i):
+        # 1. Verifica se estamos pedindo apenas um índice (ex: uoc[0]) 
+        # ou múltiplos (ex: uoc[0:5])
+        is_single = not (hasattr(i, "__len__") or isinstance(i, slice))
+        
+        if is_single:
+            i = [i] # Coloca em lista temporariamente para não quebrar a lógica original
+
         df = self.getMetaInfo()
+        
         if isinstance(i, slice):
             rows = df.iloc[i.start : i.stop : i.step]
         else:
@@ -56,12 +62,25 @@ class UOC_raw(RawVibrationDataset, DownloadableDataset):
 
         signal_datas = np.empty(len(file_name), dtype=object)
         full_fname = os.path.join(self.raw_folder, file_name.iloc[0])
+        
+        # Lê do arquivo MATLAB
         data = loadmat(full_fname, simplify_cells=True)["AccTimeDomain"]
 
-        for i, (f, p) in enumerate(zip(file_name, position)):
-            signal_datas[i] = data[:, p]
-        signal_datas = signal_datas
+        for idx_local, (f, p) in enumerate(zip(file_name, position)):
+            signal_datas[idx_local] = data[:, p]
 
+        # ---------------------------------------------------------
+        # CORREÇÃO DE PADRONIZAÇÃO (VIBNET)
+        # Se for um único item, retorna o array NumPy puro (1D) 
+        # e o metadado como um Dicionário nativo do Python!
+        # ---------------------------------------------------------
+        if is_single:
+            return {
+                "signal": signal_datas[0], 
+                "metainfo": rows.iloc[0].to_dict()
+            }
+            
+        # Se for um slice (vários itens de uma vez), mantém o comportamento original
         return {"signal": signal_datas, "metainfo": rows}
 
     def asSimpleForm(self):
