@@ -35,14 +35,26 @@ class Mechanical_Gear_raw(RawVibrationDataset):
                     fault_class = 'Healthy'
                     
                 try:
-                    # Lê o CSV gigante
-                    df = pd.read_csv(file_path, header=None)
+                    # Lê o CSV gigante (low_memory=False previne o DtypeWarning)
+                    df = pd.read_csv(file_path, header=None, low_memory=False)
+                    
+                    # ---------------------------------------------------------
+                    # LIMPEZA BLINDADA: Força as colunas alvo a serem números.
+                    # Se houver texto (cabeçalhos perdidos, erros de sensor),
+                    # o 'coerce' transforma em NaN.
+                    # ---------------------------------------------------------
+                    df[2] = pd.to_numeric(df[2], errors='coerce') # Sinal (X)
+                    df[4] = pd.to_numeric(df[4], errors='coerce') # Velocidade
+                    df[5] = pd.to_numeric(df[5], errors='coerce') # Carga
+                    
+                    # Removemos qualquer linha corrompida que virou NaN
+                    df = df.dropna(subset=[2, 4, 5])
                     
                     # Coluna 4 = Speed, Coluna 5 = Load
                     # O groupby agrupa instantaneamente todas as linhas que têm a mesma velocidade e carga!
                     for (speed, load), group in df.groupby([4, 5]):
                         
-                        # Extraímos apenas a Coluna 2 (Sensor 1 - Eixo X) conforme a sua instrução
+                        # Extraímos apenas a Coluna 2 (Sensor 1 - Eixo X)
                         signal_chunk = group[2].values
                         
                         # Guardamos este pedaço específico como uma amostra independente
