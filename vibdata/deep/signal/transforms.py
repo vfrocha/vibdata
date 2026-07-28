@@ -8,7 +8,7 @@ import essentia.standard
 from scipy import interpolate
 from sklearn import preprocessing
 from scipy.fft import rfft, rfftfreq
-from scipy.stats import kurtosis
+from scipy.stats import kurtosis, skew
 from scipy.signal import spectrogram, resample_poly
 from sklearn.base import BaseEstimator, TransformerMixin
 
@@ -88,6 +88,86 @@ class CrestFactor(Transform):
             return 0.0
             
         return peak / rms
+
+class Skewness(Transform):
+    def __init__(self):
+        super().__init__()
+
+    def transform(self, data):
+        signal = data["signal"]
+        return skew(signal)
+
+class Variance(Transform):
+    def __init__(self):
+        super().__init__()
+
+    def transform(self, data):
+        signal = data["signal"]
+        return np.var(signal)
+
+class PeakToPeak(Transform):
+    def __init__(self):
+        super().__init__()
+
+    def transform(self, data):
+        signal = data["signal"]
+        return np.ptp(signal) # Peak-to-peak (Max - Min)
+
+class ClearanceFactor(Transform):
+    def __init__(self):
+        super().__init__()
+
+    def transform(self, data):
+        signal = data["signal"]
+        peak = np.max(np.abs(signal))
+        # Quadrado da média das raízes quadradas (Fórmula do Clearance)
+        sq_mean_sqrt = (np.mean(np.sqrt(np.abs(signal)))) ** 2
+        
+        if sq_mean_sqrt == 0:
+            return 0.0
+        return peak / sq_mean_sqrt
+
+class ImpulseFactor(Transform):
+    def __init__(self):
+        super().__init__()
+
+    def transform(self, data):
+        signal = data["signal"]
+        peak = np.max(np.abs(signal))
+        mean_abs = np.mean(np.abs(signal))
+        
+        if mean_abs == 0:
+            return 0.0
+        return peak / mean_abs
+
+class ShapeFactor(Transform):
+    def __init__(self):
+        super().__init__()
+
+    def transform(self, data):
+        signal = data["signal"]
+        rms = np.sqrt(np.mean(np.square(signal)))
+        mean_abs = np.mean(np.abs(signal))
+        
+        if mean_abs == 0:
+            return 0.0
+        return rms / mean_abs
+
+class UpperBoundValueHistogram(Transform):
+    def __init__(self):
+        super().__init__()
+
+    def transform(self, data):
+        signal = data["signal"]
+        return np.max(signal)
+
+class LowerBoundValueHistogram(Transform):
+    def __init__(self):
+        super().__init__()
+
+    def transform(self, data):
+        signal = data["signal"]
+        return np.min(signal)
 
 class TransformOnFieldClass(Transform):
     def __init__(self, on_field=None) -> None:
