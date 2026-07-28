@@ -63,6 +63,14 @@ class TransformOnField(Transform):
         data[self.on_field] = self.transformer.transform(data[self.on_field])
         return data
 
+class PeakValue(Transform):
+    def __init__(self):
+        super().__init__()
+
+    def transform(self, data):
+        signal = data["signal"]
+        # Retorna o valor máximo absoluto (pico da onda)
+        return np.max(np.abs(signal))
 
 class TransformOnFieldClass(Transform):
     def __init__(self, on_field=None) -> None:
