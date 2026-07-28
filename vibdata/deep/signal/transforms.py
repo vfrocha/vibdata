@@ -731,3 +731,39 @@ class ZeroCrossingRate(Transform):
 
         zeroCrossingRate = essentia.standard.ZeroCrossingRate()
         return zeroCrossingRate(signal.astype("float32"))
+
+class Aggregator(Transform):
+    """
+    Agregador Paralelo: Executa múltiplos pipelines de transformação 
+    simultaneamente sobre o mesmo dado original e unifica os resultados.
+    """
+    def __init__(self, transforms):
+        super().__init__()
+        # transforms pode ser um dict (ex: {'time': pipe1, 'freq': pipe2}) ou list
+        self.transforms = transforms
+
+    def transform(self, data):
+        # Preserva o dado original (metainfo e signal bruto)
+        new_data = data.copy()
+        
+        if isinstance(self.transforms, dict):
+            for pipeline_name, pipeline in self.transforms.items():
+                # Envia uma cópia do dado para não poluir os outros pipelines
+                result = pipeline.transform(data.copy())
+                
+                # A SignAI guarda as features processadas sob a chave "signal". 
+                # Nós a renomeamos para o nome do domínio (ex: 'time', 'psd')
+                if isinstance(result, dict) and "signal" in result:
+                    new_data[pipeline_name] = result["signal"]
+                else:
+                    new_data[pipeline_name] = result
+                    
+        elif isinstance(self.transforms, list):
+            for i, pipeline in enumerate(self.transforms):
+                result = pipeline.transform(data.copy())
+                if isinstance(result, dict) and "signal" in result:
+                    new_data[f"feature_group_{i}"] = result["signal"]
+                else:
+                    new_data[f"feature_group_{i}"] = result
+                    
+        return new_data
