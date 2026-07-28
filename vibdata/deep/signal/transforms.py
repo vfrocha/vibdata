@@ -72,6 +72,23 @@ class PeakValue(Transform):
         # Retorna o valor máximo absoluto (pico da onda)
         return np.max(np.abs(signal))
 
+class CrestFactor(Transform):
+    def __init__(self):
+        super().__init__()
+
+    def transform(self, data):
+        signal = data["signal"]
+        
+        # Calcula o Pico e o RMS
+        peak = np.max(np.abs(signal))
+        rms = np.sqrt(np.mean(np.square(signal)))
+        
+        # Evita divisão por zero caso o sinal seja um silêncio absoluto
+        if rms == 0:
+            return 0.0
+            
+        return peak / rms
+
 class TransformOnFieldClass(Transform):
     def __init__(self, on_field=None) -> None:
         self.on_field = on_field
