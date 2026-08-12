@@ -9,7 +9,7 @@ authors = ["Igor Mattos dos Santos Varejão <imsvarejao@gmail.com>",
 
 [tool.poetry.dependencies]
 python = ">=3.10, <3.13"
-numpy = "^1.17.2"
+numpy = ">=1.26.0,<3.0.0"
 torch = ">=1.13.1"
 tqdm = "^4.0.0"
 requests = "^2.0.0"
