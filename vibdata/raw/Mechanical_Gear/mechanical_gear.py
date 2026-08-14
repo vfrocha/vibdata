@@ -22,7 +22,7 @@ class Mechanical_Gear_raw(RawVibrationDataset, DownloadableDataset):
         else:
             super().__init__(root_dir=root_dir, download_resources=Mechanical_Gear_raw.resources)
         self.root_dir = root_dir
-        self.dataset_dir = os.path.join(root_dir, "Mechanical_Gear")
+        self.dataset_dir = os.path.join(root_dir, "Mechanical_Gear_raw/Mechanical_Gear")
         
         self.files = glob.glob(os.path.join(self.dataset_dir, "**/*.csv"), recursive=True)
         
