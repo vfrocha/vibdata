@@ -46,7 +46,7 @@ class UOEMD_raw(RawVibrationDataset, DownloadableDataset):
             super().__init__(root_dir=root_dir, download_resources=UOEMD_raw.resources)
         
         self.root_dir = root_dir
-        self.raw_folder = os.path.join(root_dir, "UOEMD_raw")
+        #self.raw_folder = os.path.join(root_dir, "UOEMD_raw")
         self.dataset_dir = self.raw_folder
         
         self.files = glob.glob(os.path.join(self.dataset_dir, "**/*.mat"), recursive=True)
