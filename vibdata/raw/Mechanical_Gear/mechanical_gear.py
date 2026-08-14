@@ -1,18 +1,28 @@
 import os
 import glob
 import pandas as pd
-from vibdata.raw.base import RawVibrationDataset
+from vibdata.raw.base import RawVibrationDataset, DownloadableDataset
 
-class Mechanical_Gear_raw(RawVibrationDataset):
+class Mechanical_Gear_raw(RawVibrationDataset, DownloadableDataset):
     """
     Carregador Nativo para o Mechanical Gear Vibration Dataset (Kaggle).
     Separa automaticamente os sinais baseando-se nas colunas de Velocidade e Carga
     embutidas no próprio arquivo CSV.
     """
+    urls = ["1GfN9tlbaDAQPUAYNeuAPKBajUba_nvRY"]
+    resources = [("Mechanical_Gear.zip", None)]
     def __init__(self, root_dir, download=False):
-        super().__init__()
+        if download:
+            super().__init__(
+                root_dir=root_dir,
+                download_resources=Mechanical_Gear_raw.resources,
+                download_urls=Mechanical_Gear_raw.urls,
+                extract_files=True,
+            )
+        else:
+            super().__init__(root_dir=root_dir, download_resources=Mechanical_Gear_raw.resources)
         self.root_dir = root_dir
-        self.dataset_dir = os.path.join(root_dir, "Gearbox_raw")
+        self.dataset_dir = os.path.join(root_dir, "Mechanical_Gear")
         
         self.files = glob.glob(os.path.join(self.dataset_dir, "**/*.csv"), recursive=True)
         
