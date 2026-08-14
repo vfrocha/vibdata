@@ -1,16 +1,27 @@
 import os
 import glob
 import pandas as pd
-from vibdata.raw.base import RawVibrationDataset
+from vibdata.raw.base import RawVibrationDataset, DownloadableDataset
 
-class Electric_Motor_raw(RawVibrationDataset):
+class Electric_Motor_raw(RawVibrationDataset, DownloadableDataset):
     """
     Carregador Nativo para o Electric Motor Vibrations Dataset (Zenodo).
     Lê os arquivos CSV contendo os eixos AccX, AccY e AccZ, classificando
     as falhas dinamicamente através do nome do arquivo (01 a 30).
     """
+    urls = ["1AuPG4N4pfMdhYSuQ9m84GbO6dVknrUgn"]
+    resources = [("SOON-pEMP.zip", None)]
     def __init__(self, root_dir, download=False):
-        super().__init__()
+        if download:
+            super().__init__(
+                root_dir=root_dir,
+                download_resources=Electric_Motor_raw.resources,
+                download_urls=Electric_Motor_raw.urls,
+                extract_files=True,
+            )
+        else:
+            super().__init__(root_dir=root_dir, download_resources=Electric_Motor_raw.resources)
+            
         self.root_dir = root_dir
         # Com base no seu log de terminal, os dados estão na pasta EMP_raw
         self.dataset_dir = os.path.join(root_dir, "EMP_raw")
