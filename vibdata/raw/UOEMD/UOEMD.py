@@ -2,7 +2,7 @@ import os
 import glob
 import numpy as np
 import scipy.io as sio
-from vibdata.raw.base import RawVibrationDataset
+from vibdata.raw.base import RawVibrationDataset, DownloadableDataset
 
 SPEED_MAP = {
     '1': '15Hz', '2': '30Hz', '3': '45Hz', '4': '60Hz',
@@ -28,11 +28,23 @@ FAULT_MAP = {
     'B_R': 'Bowed Rotor'         
 }
 
-class UOEMD_raw(RawVibrationDataset):
+class UOEMD_raw(RawVibrationDataset, DownloadableDataset):
     """
     Carregador Nativo para o University of Ottawa Electric Motor Dataset (UOEMD).
     """
+    urls = ["1c7HF04IUxiYFIrATQgBYTzMLUJ2iNzLK"]
+    resources = [("University of Ottawa Electric Motor Dataset – Vibr.zip", None)]
     def __init__(self, root_dir, download=False):
+        if download:
+            super().__init__(
+                root_dir=root_dir,
+                download_resources=UOEMD_raw.resources,
+                download_urls=UOEMD_raw.urls,
+                extract_files=True,
+            )
+        else:
+            super().__init__(root_dir=root_dir, download_resources=UOEMD_raw.resources)
+        
         self.root_dir = root_dir
         self.raw_folder = os.path.join(root_dir, "UOEMD_raw")
         self.dataset_dir = self.raw_folder
