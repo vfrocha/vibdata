@@ -1,7 +1,7 @@
 import os
 import glob
 import scipy.io as sio
-from vibdata.raw.base import RawVibrationDataset
+from vibdata.raw.base import RawVibrationDataset, DownloadableDataset
 
 FAULT_MAP = {
     '1_healthy': 'Normal',
@@ -18,20 +18,48 @@ STAGE_MAP = {
     '2': 'fault'
 }
 
-class UORED_raw(RawVibrationDataset):
+# 2. IMPORTANTE: Herança dupla
+class UORED_raw(RawVibrationDataset, DownloadableDataset):
     """
     Carregador Moderno e Flexível para o UORED.
     Extrai metadados (Bearing ID e Stage) diretamente dos nomes dos arquivos
     para garantir suporte à validação cruzada (Leave-One-Bearing-Out).
     """
+    
+    # 3. LISTAS DE MÚLTIPLOS DOWNLOADS
+    # Colocamos os IDs na ordem correta (parte 1 e parte 2)
+    urls = [
+        "1SkPpD_BcF6YCnvGoYv7Z__gJzs8SnOza", # ID da parte 001
+        "16Zaojba8PyRTENFMfCrHK41kgS_4mViY"  # ID da parte 002
+    ]
+    
+    resources = [
+        ("UORED_raw-20260526T191215Z-3-001.zip", None),
+        ("UORED_raw-20260526T191215Z-3-002.zip", None)
+    ]
+
     def __init__(self, root_dir: str, download: bool = False) -> None:
-        super().__init__()
+        
+        # 4. LÓGICA DE DOWNLOAD
+        if download:
+            super().__init__(
+                root_dir=root_dir,
+                download_resources=UORED_raw.resources,
+                download_urls=UORED_raw.urls,
+                extract_files=True,
+            )
+        else:
+            super().__init__(root_dir=root_dir, download_resources=UORED_raw.resources)
+            
         self.root_dir = root_dir
-        self.dataset_dir = os.path.join(root_dir, "UORED_raw")
+        
+        # 5. CORREÇÃO DE DIRETÓRIO (A mesma aplicada na base UOEMD)
+        self.dataset_dir = self.raw_folder
+        
         self.files = glob.glob(os.path.join(self.dataset_dir, "**/*.mat"), recursive=True)
         
         if len(self.files) == 0:
-            print(f"[AVISO] Nenhum ficheiro .mat encontrado em {self.dataset_dir}.")
+            print(f"[AVISO] Nenhum ficheiro .mat encontrado em {self.dataset_dir}. Certifique-se de usar download=True.")
 
     def __len__(self):
         return len(self.files)
