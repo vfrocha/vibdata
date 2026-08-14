@@ -1,7 +1,7 @@
 import os
 import glob
 import pandas as pd
-from vibdata.raw.base import RawVibrationDataset
+from vibdata.raw.base import RawVibrationDataset, DownloadableDataset
 
 # H = Healthy, B = Broken Tooth, M = Missing/Chipped Tooth
 FAULT_MAP = {
@@ -10,15 +10,26 @@ FAULT_MAP = {
     'M': 'Missing'
 }
 
-class HUST_Gearbox_raw(RawVibrationDataset):
+class HUST_Gearbox_raw(RawVibrationDataset, DownloadableDataset):
     """
     Carregador Nativo para o HUST Gearbox Dataset.
     Lê arquivos .txt ignorando o cabeçalho e selecionando o canal correto de vibração.
     """
+    urls = ["1U8X_ZP8fMzKgKCG8IpI2k4_O8271dsrS"]
+    resources = [("HUST gearbox dataset-20260708T123128Z-3-001.zip", None)]
+    
     def __init__(self, root_dir, download=False):
-        super().__init__()
+        if download:
+            super().__init__(
+                root_dir=root_dir,
+                download_resources=HUST_Gearbox_raw.resources,
+                download_urls=HUST_Gearbox_raw.urls,
+                extract_files=True,
+            )
+        else:
+            super().__init__(root_dir=root_dir, download_resources=HUST_Gearbox_raw.resources)
         self.root_dir = root_dir
-        # A pasta base que configuramos no seu download_all.py
+        #pasta base download_all.py
         self.dataset_dir = os.path.join(root_dir, "HUST_Gearbox_raw")
         
         # Procura por arquivos .txt em qualquer subpasta
