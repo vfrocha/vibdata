@@ -23,8 +23,8 @@ class Electric_Motor_raw(RawVibrationDataset, DownloadableDataset):
             super().__init__(root_dir=root_dir, download_resources=Electric_Motor_raw.resources)
             
         self.root_dir = root_dir
-        # Com base no seu log de terminal, os dados estão na pasta EMP_raw
-        self.dataset_dir = os.path.join(root_dir, "EMP_raw")
+        #self.dataset_dir = os.path.join(root_dir, "EMP_raw")
+        self.dataset_dir = self.raw_folder
         
         self.files = glob.glob(os.path.join(self.dataset_dir, "**/*.csv"), recursive=True)
         
