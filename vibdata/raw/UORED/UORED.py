@@ -61,6 +61,9 @@ class UORED_raw(RawVibrationDataset, DownloadableDataset):
         if len(self.files) == 0:
             print(f"[AVISO] Nenhum ficheiro .mat encontrado em {self.dataset_dir}. Certifique-se de usar download=True.")
 
+    def name(self):
+        return "UORED"
+    
     def __len__(self):
         return len(self.files)
 
