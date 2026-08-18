@@ -54,6 +54,9 @@ class UOEMD_raw(RawVibrationDataset, DownloadableDataset):
         if len(self.files) == 0:
             print(f"Aviso: Nenhum arquivo encontrado em {self.dataset_dir}.")
 
+    def name(self):
+        return "UOEMD"
+    
     def __len__(self):
         return len(self.files)
 
