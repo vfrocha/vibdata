@@ -263,8 +263,19 @@ class Split(Transform):
 
     def transform(self, data: Dict):
         data = data.copy()
-        sigs = data[self.on_field]
-        metainfo = data["metainfo"].copy(deep=False)
+        
+        # --- FIX 1: Empacota arrays 1D soltos em uma lista ---
+        sigs = data.get(self.on_field)
+        if isinstance(sigs, np.ndarray) and sigs.ndim == 1:
+            sigs = [sigs]
+            
+        # --- FIX 2: Trata dicionários nativos sem quebrar o copy() ---
+        metainfo_raw = data.get("metainfo", {})
+        if isinstance(metainfo_raw, dict):
+            metainfo = pd.Series(metainfo_raw)
+        else:
+            metainfo = metainfo_raw.copy(deep=False)
+            
         ret = []
         for s in sigs:
             if len(s) < self.window_size:
@@ -447,10 +458,21 @@ class SplitSampleRate(Transform):
         self.on_field = on_field
 
     def transform(self, data: SignalSample) -> SignalSample:
-        sigs = data[self.on_field]
-        metainfo = data["metainfo"].copy(deep=False)
+        # --- FIX 1: Empacota arrays 1D soltos em uma lista ---
+        sigs = data.get(self.on_field)
+        if isinstance(sigs, np.ndarray) and sigs.ndim == 1:
+            sigs = [sigs]
+            
+        # --- FIX 2: Trata dicionários nativos sem quebrar o copy() ---
+        metainfo_raw = data.get("metainfo", {})
+        if isinstance(metainfo_raw, dict):
+            metainfo = pd.Series(metainfo_raw)
+        else:
+            metainfo = metainfo_raw.copy(deep=False)
+            
         # Trick in order to admit metainfo as a pd.Series or pd.DataFrame
         iter_meta = [(None, metainfo)] if isinstance(metainfo, pd.Series) else metainfo.iterrows()
+        
         # Accumulators variables
         splitted_signals = []
         splitted_metainfo = []
