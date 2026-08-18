@@ -33,7 +33,10 @@ class Electric_Motor_raw(RawVibrationDataset, DownloadableDataset):
 
     def __len__(self):
         return len(self.files)
-
+        
+    def name(self):
+        return "EMP"
+    
     def __getitem__(self, idx):
         file_path = self.files[idx]
         file_name_full = os.path.basename(file_path)
