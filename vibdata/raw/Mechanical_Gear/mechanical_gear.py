@@ -82,6 +82,9 @@ class Mechanical_Gear_raw(RawVibrationDataset, DownloadableDataset):
     def __len__(self):
         return len(self.samples)
 
+    def name(self):
+        return "Mechanical_Gear"
+
     def __getitem__(self, idx):
         item = self.samples[idx]
         speed = item['speed']
