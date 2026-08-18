@@ -40,7 +40,10 @@ class HUST_Gearbox_raw(RawVibrationDataset, DownloadableDataset):
 
     def __len__(self):
         return len(self.files)
-
+        
+    def name(self):
+        return "HUST_Gearbox"
+    
     def __getitem__(self, idx):
         file_path = self.files[idx]
         file_name_full = os.path.basename(file_path)
